@@ -14,18 +14,16 @@ __all__ = ('create_metrics_for_device')
 
 
 class Metric:
-    def __init__(self, servicetype, method, key=None):
+    def __init__(self, servicetype, method):
         """Initialize a CounterMetric."""
         self.servicetype = servicetype
         self.method = method
-        if key is None:
-            key = "New" + method[3:]
-        self.key = key
 
     def _collect(self, device):
         control_url = Metric._getControlURL(device, self.servicetype)
+        logging.info(f"Calling {self.servicetype}/{self.method} on {control_url}")
         result = device.execute(control_url, self.servicetype, self.method)
-        return result[self.key]
+        return result
 
     @staticmethod
     @lru_cache()
@@ -33,19 +31,21 @@ class Metric:
         return device.getControlURL(servicetype)
 
 
-class GaugeMetric(Metric):
-    """Wraps Counters."""
+class ActionGauge(Metric):
+    """Wraps Gauges."""
 
-    def __init__(self, name, description, servicetype, method, key=None):
+    def __init__(self, servicetype, method, outparams):
         """Initialize a GaugeMetric."""
-        super(GaugeMetric, self).__init__(servicetype, method, key)
-        self.name = name
-        self.description = description
-        self.counter = prometheus_client.Gauge(name, description)
+        super(ActionGauge, self).__init__(servicetype, method)
+        self.gauges = {}
+        for outparam in outparams:
+            self.gauges[outparam] = prometheus_client.Gauge(
+                nicename(outparam), "")
 
     def boop(self, device):
         value = self._collect(device)
-        self.counter.set(value)
+        for key, gauge in self.gauges.items():
+            gauge.set(value[key])
 
 
 blacklist = ["RequestFTPServerWAN"]
@@ -89,17 +89,12 @@ def create(services):
     metrics = []
     for service, actions in services.items():
         for action, outparams in actions.items():
-            for outparam in outparams:
-                name = nicename(outparam)
-                try:
-                    # TODO: Instead of multiple gauges per (service, action),
-                    # create one wrapper that calls the action once and sets
-                    # multiple gauges
-                    m = GaugeMetric(name, "", service, action, outparam)
-                    metrics.append(m)
-                except ValueError:
-                    # TODO: ValueError: Duplicated timeseries in CollectorRegistry: {'tr64_ftpwanport'}
-                    pass
+            try:
+                m = ActionGauge(service, action, outparams)
+                metrics.append(m)
+            except ValueError:
+                # TODO: ValueError: Duplicated timeseries in CollectorRegistry: {'tr64_ftpwanport'}
+                pass
     return metrics
 
 
