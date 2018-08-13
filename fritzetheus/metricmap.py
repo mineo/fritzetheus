@@ -2,9 +2,15 @@
 # coding: utf-8
 # Copyright © 2018 Wieland Hoffmann
 # License: MIT, see LICENSE for details
+import logging
 import prometheus_client
+import re
 
+from collections import defaultdict
 from functools import lru_cache
+
+
+__all__ = ('create_metrics_for_device')
 
 
 class Metric:
@@ -42,15 +48,59 @@ class GaugeMetric(Metric):
         self.counter.set(value)
 
 
-# TODO: It should be possible to just generate this from the xml files
-METRICS = [
-    GaugeMetric("fritzbox_uptime", "Uptime", "urn:dslforum-org:service:DeviceInfo:1", "GetInfo", "NewUpTime"),  # noqa: E501
-    GaugeMetric("fritzbox_layer1_upstreammaxbitrate", "", "urn:dslforum-org:service:WANCommonInterfaceConfig:1", "GetCommonLinkProperties", "NewLayer1UpstreamMaxBitRate"),
-    GaugeMetric("fritzbox_layer1_downstreammaxbitrate", "", "urn:dslforum-org:service:WANCommonInterfaceConfig:1", "GetCommonLinkProperties", "NewLayer1DownstreamMaxBitRate"),
-    GaugeMetric("fritzbox_wan_totalbytessent", "", "urn:dslforum-org:service:WANCommonInterfaceConfig:1", "GetTotalBytesSent"),
-    GaugeMetric("fritzbox_wan_totalbytesreceived", "", "urn:dslforum-org:service:WANCommonInterfaceConfig:1", "GetTotalBytesSent"),
-    GaugeMetric("fritzbox_wan_totalpacketssent", "", "urn:dslforum-org:service:WANCommonInterfaceConfig:1", "GetTotalPacketsSent"),
-    GaugeMetric("fritzbox_wan_totalpacketsreceived", "", "urn:dslforum-org:service:WANCommonInterfaceConfig:1", "GetTotalPacketsReceived"),
-    GaugeMetric("fritzbox_wandsl_upstreamcurrrate", "", "urn:dslforum-org:service:WANDSLInterfaceConfig:1", "GetInfo", "NewUpstreamCurrRate"),
-    GaugeMetric("fritzbox_wandsl_downstreamcurrrate", "", "urn:dslforum-org:service:WANDSLInterfaceConfig:1", "GetInfo", "NewDownstreamCurrRate"),
-]
+blacklist = ["RequestFTPServerWAN"]
+
+good_outparam_types = ["i2", "i4", "ui2", "ui4"]
+
+
+def nicename(name):
+    return "tr64_" + re.sub("\W", "_", name).lower()[3:]
+
+
+def discover_services(device):
+    """
+    :param device:
+    """
+    device.loadDeviceDefinitions("http://fritz.box:49000/tr64desc.xml")
+    device.loadSCPD()
+    scpd = device.deviceSCPD
+    services = {}
+    for service, actions in scpd.items():
+        action_dump = defaultdict(list)
+        for action, parameters in actions.items():
+            if action in blacklist:
+                continue
+            if 'inParameter' in parameters:
+                logging.debug(f"Dropping {action} because it has inparams")
+                continue
+            elif "outParameter" not in parameters:
+                logging.debug(f"Dropping {action} because it has no outparams")
+                continue
+            else:
+                for param, desc in (parameters["outParameter"].items()):
+                    if desc["dataType"] in good_outparam_types:
+                        action_dump[action].append(param)
+                        logging.debug(f"{action} looks great!")
+        services[service] = action_dump
+    return services
+
+
+def create(services):
+    metrics = []
+    for service, actions in services.items():
+        for action, outparams in actions.items():
+            for outparam in outparams:
+                name = nicename(outparam)
+                try:
+                    m = GaugeMetric(name, "", service, action, outparam)
+                    metrics.append(m)
+                except ValueError:
+                    # TODO: ValueError: Duplicated timeseries in CollectorRegistry: {'tr64_ftpwanport'}
+                    pass
+    return metrics
+
+
+def create_metrics_for_device(device):
+    services = discover_services(device)
+    metrics = create(services)
+    return metrics

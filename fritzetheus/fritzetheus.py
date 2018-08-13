@@ -7,7 +7,7 @@ import prometheus_client
 import simpletr64
 
 
-from .metricmap import METRICS
+from .metricmap import create_metrics_for_device
 
 
 def build_arg_parser():
@@ -42,12 +42,12 @@ def main():
     connect(args.fritzbox, args.username, args.password)
     device = connect(args.fritzbox, args.username, args.password)
     prometheus_client.start_http_server(8000)
+    metrics = create_metrics_for_device(device)
     while True:
-        for metric in METRICS:
+        for metric in metrics:
             metric.boop(device)
         import time
         time.sleep(2)
-
 
 
 if __name__ == "__main__":
