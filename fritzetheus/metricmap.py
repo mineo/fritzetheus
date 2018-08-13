@@ -92,6 +92,9 @@ def create(services):
             for outparam in outparams:
                 name = nicename(outparam)
                 try:
+                    # TODO: Instead of multiple gauges per (service, action),
+                    # create one wrapper that calls the action once and sets
+                    # multiple gauges
                     m = GaugeMetric(name, "", service, action, outparam)
                     metrics.append(m)
                 except ValueError:
