@@ -1,0 +1,9 @@
+include README.txt
+
+include *.txt
+include LICENSE
+include tox.ini
+recursive-include docs *.py
+recursive-include docs *.rst
+recursive-include docs Makefile
+recursive-include test *.py
