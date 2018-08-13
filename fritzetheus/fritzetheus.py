@@ -3,6 +3,7 @@
 # Copyright © 2018 Wieland Hoffmann
 # License: MIT, see LICENSE for details
 import argparse
+import logging
 import prometheus_client
 import simpletr64
 
@@ -37,12 +38,14 @@ def connect(hostname, username, password):
 
 def main():
     """Main."""
+    logging.basicConfig(level=logging.DEBUG)
     parser = build_arg_parser()
     args = parser.parse_args()
     connect(args.fritzbox, args.username, args.password)
     device = connect(args.fritzbox, args.username, args.password)
     prometheus_client.start_http_server(8000)
     metrics = create_metrics_for_device(device)
+    logging.info(f"Tracking {len(metrics)} actions")
     while True:
         for metric in metrics:
             metric.boop(device)
