@@ -28,6 +28,7 @@ setup(name="fritzetheus",
       python_requires='>=3.4.*',
       setup_requires=["setuptools_scm"],
       use_scm_version={"write_to": "fritzetheus/version.py"},
+      install_requires=["prometheus_client", "simpleTR64", "Twisted"],
       extras_require={
           'docs': ['sphinx']
       }
