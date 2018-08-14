@@ -70,7 +70,7 @@ def discover_services(device):
         for action, parameters in actions.items():
             if action in blacklist:
                 continue
-            if 'inParameter' in parameters:
+            elif 'inParameter' in parameters:
                 logging.debug(f"Dropping {action} because it has inparams")
                 continue
             elif "outParameter" not in parameters:
