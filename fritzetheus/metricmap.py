@@ -39,22 +39,28 @@ class ActionGauge(Metric):
         super(ActionGauge, self).__init__(servicetype, method)
         self.gauges = {}
         for outparam in outparams:
-            self.gauges[outparam] = prometheus_client.Gauge(
-                nicename(outparam), "")
+            name = self._generate_name(servicetype, outparam)
+            self.gauges[outparam] = prometheus_client.Gauge(name, "")
 
     def boop(self, device):
         value = self._collect(device)
         for key, gauge in self.gauges.items():
             gauge.set(value[key])
 
+    @staticmethod
+    def _generate_name(servicetype, name):
+        def clean(value):
+            return re.sub("\W", "_", value).lower()
+
+        cleaned_name = clean(name)[3:]
+        servicename, v = servicetype.split(":")[3:]
+        cleaned_service = clean(servicename)
+        return f"tr64_{cleaned_service}_{v}_{cleaned_name}"
+
 
 blacklist = ["RequestFTPServerWAN"]
 
 good_outparam_types = ["i2", "i4", "ui2", "ui4"]
-
-
-def nicename(name):
-    return "tr64_" + re.sub("\W", "_", name).lower()[3:]
 
 
 def discover_services(device):
