@@ -22,7 +22,7 @@ class Metric:
     def _collect(self, device):
         control_url = Metric._getControlURL(device, self.servicetype)
         logging.info(f"Calling {self.servicetype}/{self.method} on {control_url}")
-        result = device.execute(control_url, self.servicetype, self.method)
+        result = device.execute(control_url, self.servicetype, self.method, timeout=60)
         return result
 
     @staticmethod
