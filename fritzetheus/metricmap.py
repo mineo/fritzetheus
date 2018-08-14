@@ -58,7 +58,7 @@ class ActionGauge(Metric):
         return f"tr64_{cleaned_service}_{v}_{cleaned_name}"
 
 
-blacklist = ["RequestFTPServerWAN"]
+blacklist = []
 
 good_outparam_types = ["i2", "i4", "ui2", "ui4"]
 
