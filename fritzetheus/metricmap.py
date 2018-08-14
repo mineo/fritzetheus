@@ -58,7 +58,9 @@ class ActionGauge(Metric):
         return f"tr64_{cleaned_service}_{v}_{cleaned_name}"
 
 
-blacklist = ["X_AVM-DE_GetWLANHybridMode"]
+blacklist = [("urn:dslforum-org:service:WLANConfiguration:2", "X_AVM-DE_GetWLANHybridMode"),
+             ("urn:dslforum-org:service:WLANConfiguration:3", "X_AVM-DE_GetWLANHybridMode"),
+]
 
 good_outparam_types = ["i2", "i4", "ui2", "ui4"]
 
@@ -74,7 +76,7 @@ def discover_services(device):
     for service, actions in scpd.items():
         action_dump = defaultdict(list)
         for action, parameters in actions.items():
-            if action in blacklist:
+            if (service, action) in blacklist:
                 continue
             elif 'inParameter' in parameters:
                 logging.debug(f"Dropping {action} because it has inparams")
