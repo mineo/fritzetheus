@@ -60,6 +60,9 @@ class ActionGauge(Metric):
 
 blacklist = [("urn:dslforum-org:service:WLANConfiguration:2", "X_AVM-DE_GetWLANHybridMode"),
              ("urn:dslforum-org:service:WLANConfiguration:3", "X_AVM-DE_GetWLANHybridMode"),
+             ("urn:dslforum-org:service:WANIPConnection:1", "GetInfo"),
+             ("urn:dslforum-org:service:WANIPConnection:1", "GetStatusInfo"),
+             ("urn:dslforum-org:service:WANIPConnection:1", "GetPortMappingNumberOfEntries"),
 ]
 
 good_outparam_types = ["i2", "i4", "ui2", "ui4"]
