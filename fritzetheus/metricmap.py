@@ -21,8 +21,11 @@ class Metric:
 
     def _collect(self, device):
         control_url = Metric._getControlURL(device, self.servicetype)
-        logging.info(f"Calling {self.servicetype}/{self.method} on {control_url}")
-        result = device.execute(control_url, self.servicetype, self.method, timeout=60)
+        logging.info(f"Calling {self.servicetype}/{self.method} on {control_url}")  # noqa: E501
+        result = device.execute(control_url,
+                                self.servicetype,
+                                self.method,
+                                timeout=60)
         return result
 
     @staticmethod
@@ -58,18 +61,19 @@ class ActionGauge(Metric):
         return f"tr64_{cleaned_service}_{v}_{cleaned_name}"
 
 
-blacklist = [("urn:dslforum-org:service:WLANConfiguration:2", "X_AVM-DE_GetWLANHybridMode"),
-             ("urn:dslforum-org:service:WLANConfiguration:3", "X_AVM-DE_GetWLANHybridMode"),
+blacklist = [("urn:dslforum-org:service:WLANConfiguration:2", "X_AVM-DE_GetWLANHybridMode"),  # noqa: E501
+             ("urn:dslforum-org:service:WLANConfiguration:3", "X_AVM-DE_GetWLANHybridMode"),  # noqa: E501
              ("urn:dslforum-org:service:WANIPConnection:1", "GetInfo"),
              ("urn:dslforum-org:service:WANIPConnection:1", "GetStatusInfo"),
-             ("urn:dslforum-org:service:WANIPConnection:1", "GetPortMappingNumberOfEntries"),
+             ("urn:dslforum-org:service:WANIPConnection:1", "GetPortMappingNumberOfEntries"),  # noqa: E501
 ]
 
 good_outparam_types = ["i2", "i4", "ui2", "ui4"]
 
 
 def discover_services(device):
-    """
+    """Discover all services on `device`.
+
     :param device:
     """
     device.loadDeviceDefinitions("http://fritz.box:49000/tr64desc.xml")
@@ -97,6 +101,10 @@ def discover_services(device):
 
 
 def create(services):
+    """Create gauges for all elements of `services`.
+
+    :rtype: [ActionGauge]
+    """
     metrics = []
     for service, actions in services.items():
         for action, outparams in actions.items():
@@ -104,12 +112,17 @@ def create(services):
                 m = ActionGauge(service, action, outparams)
                 metrics.append(m)
             except ValueError:
-                # TODO: ValueError: Duplicated timeseries in CollectorRegistry: {'tr64_ftpwanport'}
+                # ValueError: Duplicated timeseries in CollectorRegistry:
+                # {'tr64_ftpwanport'}
                 pass
     return metrics
 
 
 def create_metrics_for_device(device):
+    """Create gauges for all services that can be found on `device`.
+
+    :rtype: [ActionGauge]
+    """
     services = discover_services(device)
     metrics = create(services)
     return metrics
