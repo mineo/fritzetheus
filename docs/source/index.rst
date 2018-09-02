@@ -7,6 +7,7 @@ Contents:
    :maxdepth: 2
 
    setup
+   avmdocs
 
 API:
 
@@ -20,4 +21,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
