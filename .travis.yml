@@ -1,0 +1,16 @@
+language: python
+cache: pip
+matrix:
+  include:
+  - python: "3.7-dev"
+    env: TOXENV=docs
+  - python: "3.7-dev"
+    env: TOXENV=flake8
+  - python: "3.7-dev"
+    env: TOXENV=package
+  - python: "3.7-dev"
+    env: TOXENV=py37
+install:
+  - travis_retry pip install tox
+script:
+  - travis_retry tox

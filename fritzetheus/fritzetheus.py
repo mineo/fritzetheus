@@ -38,7 +38,7 @@ def connect(hostname, username, password):
 
 def main():
     """Main."""
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     parser = build_arg_parser()
     args = parser.parse_args()
     connect(args.fritzbox, args.username, args.password)
