@@ -1,5 +1,5 @@
 Welcome to fritzetheus's documentation!
-================================
+=======================================
 
 Contents:
 
